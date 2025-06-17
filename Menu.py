@@ -9,11 +9,12 @@ WIDTH, HEIGHT = 400, 400
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 BLUE = (0, 0, 200)
+RED = (255, 0, 0)
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Echo Menu")
-font = pygame.font.Font(None, 24)
-title_font = pygame.font.Font(None, 48)
+font = pygame.font.Font("assets/TTOctosquaresItalic.ttf", 15)
+title_font = pygame.font.Font("assets/TTOctosquaresExpXBoldIt.ttf", 48)
 
 # ========== Assets ==========
 img = pygame.image.load('assets/boy.jpg')
@@ -81,7 +82,7 @@ def main():
 
         screen.fill(WHITE)
 
-        title_label = title_font.render("ECHO", True, BLUE)
+        title_label = title_font.render("ECHO", True, RED)
         title_rect = title_label.get_rect(center=(WIDTH // 2, 40))
         screen.blit(title_label, title_rect)
 
