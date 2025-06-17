@@ -5,17 +5,18 @@ pygame.init()
 pygame.mixer.init()
 
 # ========== Settings ==========
-WIDTH, HEIGHT = 900, 600
+WIDTH, HEIGHT = 400, 400
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 BLUE = (0, 0, 200)
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Main Menu")
+pygame.display.set_caption("Echo Menu")
 font = pygame.font.Font(None, 24)
+title_font = pygame.font.Font(None, 48)
 
 # ========== Assets ==========
-img = pygame.image.load('assets/eye.gif')
+img = pygame.image.load('assets/boy.jpg')
 img = pygame.transform.scale(img, (200, 200))
 click_sound = pygame.mixer.Sound('assets/click.wav')
 
@@ -78,7 +79,12 @@ def main():
                             sys.exit()
 
         screen.fill(WHITE)
-        screen.blit(img, (WIDTH // 2 + 5, HEIGHT // 2 - 100))
+
+        title_label = title_font.render("ECHO", True, BLUE)
+        title_rect = title_label.get_rect(center=(WIDTH // 2, 40))
+        screen.blit(title_label, title_rect)
+
+        screen.blit(img, (WIDTH // 2 + 5, HEIGHT // 2 ))
 
         for btn in buttons:
             btn.draw(screen, mouse_pos)
