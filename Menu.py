@@ -19,7 +19,8 @@ title_font = pygame.font.Font(None, 48)
 img = pygame.image.load('assets/boy.jpg')
 img = pygame.transform.scale(img, (200, 200))
 click_sound = pygame.mixer.Sound('assets/click.wav')
-
+pygame.mixer.music.load('assets/30 Singularity.mp3') 
+pygame.mixer.music.play(-1)
 
 # ========== Button Class ==========
 class Button:
