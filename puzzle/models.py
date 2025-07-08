@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, create_engine
+from sqlalchemy import Column, Integer, String, UniqueConstraint
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
@@ -10,3 +10,8 @@ class Puzzle(Base):
     category = Column(String)
     prompt = Column(String)
     answer = Column(String)
+    language = Column(String)
+
+    __table_args__ = (
+        UniqueConstraint('prompt', name='uix_prompt'),
+    )
