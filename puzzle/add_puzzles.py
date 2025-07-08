@@ -2,8 +2,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
 from models import Puzzle
+import os
 
-engine = create_engine('sqlite:///puzzles.db')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+db_path = os.path.join(BASE_DIR,"puzzles.db")
+engine = create_engine(f"sqlite:///{db_path}")
 Session = sessionmaker(bind=engine)
 session = Session()
 
