@@ -11,6 +11,8 @@ import arabic_reshaper
 from bidi.algorithm import get_display
 import time
 import sys
+import difflib
+
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 db_path = os.path.join(BASE_DIR, "puzzles.db")
@@ -38,26 +40,57 @@ def callback(recognizer, audio):
 def normalize_answer(ans):
     return ans.strip().lower()
 
+pygame.init()
 pygame.mixer.init()
+
 correct_sound = pygame.mixer.Sound("./assets/correct.mp3")
 wrong_sound = pygame.mixer.Sound("./assets/error.mp3")
 game_over_sound = pygame.mixer.Sound("./assets/gameover.mp3")
-pygame.init()
+mic_icon = pygame.image.load("./assets/mic.png")
+mic_icon = pygame.transform.scale(mic_icon, (40, 40))
+
 WIDTH, HEIGHT = 1300, 400
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Voice-based puzzle game")
 font = pygame.font.Font("./assets/Vazirmatn-Regular.ttf", 28)
 
-def draw_text(text, y, color=(0,0,0)):
+def draw_text(text, y, color=(0,0,0), x=40):
     lines = text.split('\n')
     for i, line in enumerate(lines):
-        if any('\u0600' <= c <= '\u06FF' for c in line): 
+        if any('\u0600' <= c <= '\u06FF' for c in line):
             reshaped_text = arabic_reshaper.reshape(line)
             bidi_text = get_display(reshaped_text)
             rendered = font.render(bidi_text, True, color)
         else:
             rendered = font.render(line, True, color)
-        screen.blit(rendered, (40, y + i*40))
+        screen.blit(rendered, (x, y + i*40))
+
+
+def draw_key_button(text, x, y):
+    pygame.draw.rect(screen, (200, 200, 200), (x, y, 50, 40), border_radius=8)
+    key_font = pygame.font.Font("./assets/Vazirmatn-Regular.ttf", 24)
+    txt = key_font.render(text, True, (0, 0, 0))
+    screen.blit(txt, (x + 15, y + 8))
+
+def draw_help():
+    box_width, box_height = 600, 300
+    box_x = (WIDTH - box_width) // 2
+    box_y = (HEIGHT - box_height) // 2
+    pygame.draw.rect(screen, (245, 245, 210), (box_x, box_y, box_width, box_height), border_radius=12)
+
+    start_x = box_x + 30
+    start_y = box_y + 30
+
+    draw_text("Help:", start_y, (0, 0, 0), x=start_x)
+    draw_key_button("H", start_x, start_y + 40)
+    draw_text("Show/Hide Help", start_y + 45, x=start_x + 70)
+    draw_key_button("F", start_x, start_y + 80)
+    draw_text("Select Persian Language", start_y + 85, x=start_x + 70)
+    draw_key_button("E", start_x, start_y + 120)
+    draw_text("Select English Language", start_y + 125, x=start_x + 70)
+    draw_text("Say 'exit'|'خروج' or press Q to quit the game", start_y + 160, x=start_x)
+    draw_text("Say 'I don't know'|'نمی دونم' to skip a puzzle", start_y + 200, x=start_x)
+
 
 def main():
     global voice_lang
@@ -69,6 +102,10 @@ def main():
     stop_listening = None
     sleep_time = 0
     score = 0
+    show_help = False
+    used_puzzles = set()
+    correct_count = 0
+    wrong_count = 0
 
     while running:
         screen.fill((220, 220, 250))
@@ -90,27 +127,40 @@ def main():
                         lang = "en"
                         voice_lang = "en-US"
                         state = "game"
+                    elif event.key == pygame.K_h:
+                        show_help = not show_help
+                    elif event.key == pygame.K_q:
+                        pygame.quit()
+                        sys.exit()
                     if state == "game":
                         with mic as source:
                             recognizer.adjust_for_ambient_noise(source)
                         stop_listening = recognizer.listen_in_background(mic, callback)
         
         if state == "choose_lang":
-            draw_text("Press F for فارسی or E for English", 120)
+            if show_help:
+                draw_help()
+            else:
+                draw_text("Press F for فارسی or E for English, H for Help", 120)
+
         elif state == "game":
             if not puzzle:
-                puzzles = session.query(Puzzle).filter_by(language=lang).all()
-                if not puzzles:
-                    draw_text("No puzzles found.", 120)
+                available = [p for p in session.query(Puzzle).filter_by(language=lang).all() if p.id not in used_puzzles]
+                if not available:
+                    message = "All puzzles completed!"
                     state = "end"
                 else:
-                    puzzle = random.choice(puzzles)
+                    puzzle = random.choice(available)
+                    used_puzzles.add(puzzle.id)
                     message = ""
             else:
                 draw_text(f"Score: {score}", 20, (50, 50, 200))
                 draw_text("Puzzle:", 60)
                 draw_text(puzzle.prompt, 100)
                 draw_text("Speak your answer...", 200)
+                if int(time.time() * 2) % 2 == 0:  
+                    screen.blit(mic_icon, (400, 200))
+
                 
                 try:
                     user_input = audio_queue.get_nowait()
@@ -128,24 +178,29 @@ def main():
                             message = f"The correct answer was: {puzzle.answer}"
                             puzzle = None
                             wrong_sound.play()
+                            sleep_time = 3
                             score -= 1
+                            wrong_count += 1
                         elif normalize_answer(user_input) == normalize_answer(puzzle.answer):
-                            message = "Correct! the answer was: {}".format(puzzle.answer)
+                            message = "Correct!"
                             puzzle = None
                             correct_sound.play()
-                            sleep_time = 3
                             score += 2
+                            correct_count += 1
                         else:
-                            message = f"X Incorrect ,you said: {user_input} .Try again..."
+                            message = f"X Incorrect ,you said: {user_input}.Try again..."
                             wrong_sound.play()
                 except queue.Empty:
                     pass
                 
         elif state == "end":
             game_over_sound.play()
-            draw_text(f"Game Over!", 120)
-            draw_text(f"Your final score: {score}", 170, (50, 50, 200))
-            draw_text("Press any key to exit...", 250)
+            draw_text("Game Over!", 100)
+            draw_text(f"Your final score: {score}", 150, (50, 50, 200))
+            draw_text(f"Total puzzles: {correct_count + wrong_count}", 200)
+            draw_text(f"Correct answers: {correct_count}", 240, (0, 150, 0))
+            draw_text(f"Wrong answers: {wrong_count}", 280, (200, 0, 0))
+            draw_text("Press any key to exit...", 330)
             pygame.display.flip()
     
             waiting_for_exit = True
