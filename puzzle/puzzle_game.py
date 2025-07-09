@@ -73,23 +73,25 @@ def draw_key_button(text, x, y):
     screen.blit(txt, (x + 15, y + 8))
 
 def draw_help():
-    box_width, box_height = 600, 300
+    box_width, box_height = 900, 330
     box_x = (WIDTH - box_width) // 2
     box_y = (HEIGHT - box_height) // 2
     pygame.draw.rect(screen, (245, 245, 210), (box_x, box_y, box_width, box_height), border_radius=12)
 
-    start_x = box_x + 30
-    start_y = box_y + 30
+    start_x = box_x + 20
+    start_y = box_y + 20
 
-    draw_text("Help:", start_y, (0, 0, 0), x=start_x)
-    draw_key_button("H", start_x, start_y + 40)
-    draw_text("Show/Hide Help", start_y + 45, x=start_x + 70)
-    draw_key_button("F", start_x, start_y + 80)
-    draw_text("Select Persian Language", start_y + 85, x=start_x + 70)
-    draw_key_button("E", start_x, start_y + 120)
-    draw_text("Select English Language", start_y + 125, x=start_x + 70)
-    draw_text("Say 'exit'|'خروج' or press Q to quit the game", start_y + 160, x=start_x)
-    draw_text("Say 'I don't know'|'نمی دونم' to skip a puzzle", start_y + 200, x=start_x)
+    draw_text("Help:", start_y-5, (0, 0, 0), x=start_x)
+    draw_key_button("H", start_x, start_y + 35)
+    draw_text("Show/Hide Help", start_y + 40, x=start_x + 70)
+    draw_key_button("F", start_x, start_y + 85)
+    draw_text("Select Persian Language", start_y + 90, x=start_x + 70)
+    draw_key_button("E", start_x, start_y + 135)
+    draw_text("Select English Language", start_y + 140, x=start_x + 70)
+    draw_text("This is a voice-controlled puzzle game. Speak your answers!", start_y + 180, x=start_x)
+    draw_text("Say 'exit'|'خروج' or press Q to quit the game", start_y + 220, x=start_x)
+    draw_text("Say 'I don't know'|'نمی دونم' to skip a puzzle", start_y + 260, x=start_x)
+
 
 
 def main():
@@ -141,7 +143,12 @@ def main():
             if show_help:
                 draw_help()
             else:
-                draw_text("Press F for فارسی or E for English, H for Help", 120)
+                draw_key_button("H", 35, 100)
+                draw_text("Show/Hide Help", 100, x=100)
+                draw_key_button("F", 35, 150)
+                draw_text("Persian Language", 150, x=100)
+                draw_key_button("E", 35, 200)
+                draw_text("English Language", 200, x=100)
 
         elif state == "game":
             if not puzzle:
