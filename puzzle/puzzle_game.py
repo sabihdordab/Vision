@@ -43,6 +43,13 @@ def normalize_answer(ans):
 pygame.init()
 pygame.mixer.init()
 
+
+BG_COLOR = (18, 18, 30)             
+TEXT_COLOR = (200, 200, 255)       
+BUTTON_COLOR = (30, 30, 60)         
+BUTTON_HOVER_COLOR = (60, 60, 120) 
+MIC_ICON_COLOR = (100, 180, 255)    
+
 correct_sound = pygame.mixer.Sound("./assets/correct.mp3")
 wrong_sound = pygame.mixer.Sound("./assets/error.mp3")
 game_over_sound = pygame.mixer.Sound("./assets/gameover.mp3")
@@ -54,7 +61,7 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Voice-based puzzle game")
 font = pygame.font.Font("./assets/Vazirmatn-Regular.ttf", 28)
 
-def draw_text(text, y, color=(0,0,0), x=40):
+def draw_text(text, y, color=TEXT_COLOR, x=40):
     lines = text.split('\n')
     for i, line in enumerate(lines):
         if any('\u0600' <= c <= '\u06FF' for c in line):
@@ -67,16 +74,24 @@ def draw_text(text, y, color=(0,0,0), x=40):
 
 
 def draw_key_button(text, x, y):
-    pygame.draw.rect(screen, (200, 200, 200), (x, y, 50, 40), border_radius=8)
+    mouse_pos = pygame.mouse.get_pos()
+    rect = pygame.Rect(x, y, 50, 40)
+    if rect.collidepoint(mouse_pos):
+        color = BUTTON_HOVER_COLOR
+    else:
+        color = BUTTON_COLOR
+
+    pygame.draw.rect(screen, color, rect, border_radius=8)
     key_font = pygame.font.Font("./assets/Vazirmatn-Regular.ttf", 24)
-    txt = key_font.render(text, True, (0, 0, 0))
+    txt = key_font.render(text, True, TEXT_COLOR)
     screen.blit(txt, (x + 15, y + 8))
+
 
 def draw_help():
     box_width, box_height = 900, 330
     box_x = (WIDTH - box_width) // 2
     box_y = (HEIGHT - box_height) // 2
-    pygame.draw.rect(screen, (245, 245, 210), (box_x, box_y, box_width, box_height), border_radius=12)
+    pygame.draw.rect(screen, (255, 255, 255), (box_x, box_y, box_width, box_height), border_radius=12)
 
     start_x = box_x + 20
     start_y = box_y + 20
@@ -89,10 +104,13 @@ def draw_help():
     draw_key_button("E", start_x, start_y + 135)
     draw_text("Select English Language", start_y + 140, x=start_x + 70)
     draw_text("This is a voice-controlled puzzle game. Speak your answers!", start_y + 180, x=start_x)
-    draw_text("Say 'exit'|'خروج' or press Q to quit the game", start_y + 220, x=start_x)
+    draw_text("Say 'exit'|'خروج' to quit the game", start_y + 220, x=start_x)
     draw_text("Say 'I don't know'|'نمی دونم' to skip a puzzle", start_y + 260, x=start_x)
 
 
+def draw_mic_icon(x, y):
+    pygame.draw.circle(screen, MIC_ICON_COLOR, (x+20, y+20), 25, 3) 
+    screen.blit(mic_icon, (x, y))
 
 def main():
     global voice_lang
@@ -110,9 +128,9 @@ def main():
     wrong_count = 0
 
     while running:
-        screen.fill((220, 220, 250))
+        screen.fill(BG_COLOR)
         if message:
-                    draw_text(message, 350, (0,100,0))
+                    draw_text(message, 350, (100, 220, 255))
         time.sleep(sleep_time)
         sleep_time = 0
         for event in pygame.event.get():
@@ -161,12 +179,13 @@ def main():
                     used_puzzles.add(puzzle.id)
                     message = ""
             else:
-                draw_text(f"Score: {score}", 20, (50, 50, 200))
+                draw_text(f"Score: {score}", 20, (150, 180, 255))
                 draw_text("Puzzle:", 60)
                 draw_text(puzzle.prompt, 100)
                 draw_text("Speak your answer...", 200)
-                if int(time.time() * 2) % 2 == 0:  
-                    screen.blit(mic_icon, (400, 200))
+                if int(time.time() * 2) % 2 == 0:
+                    draw_mic_icon(400, 200)
+
 
                 
                 try:
@@ -202,12 +221,12 @@ def main():
                 
         elif state == "end":
             game_over_sound.play()
-            draw_text("Game Over!", 100)
-            draw_text(f"Your final score: {score}", 150, (50, 50, 200))
-            draw_text(f"Total puzzles: {correct_count + wrong_count}", 200)
-            draw_text(f"Correct answers: {correct_count}", 240, (0, 150, 0))
-            draw_text(f"Wrong answers: {wrong_count}", 280, (200, 0, 0))
-            draw_text("Press any key to exit...", 330)
+            draw_text("Game Over!", 50)
+            draw_text(f"Your final score: {score}", 100, (50, 50, 200))
+            draw_text(f"Total puzzles: {correct_count + wrong_count}", 150)
+            draw_text(f"Correct answers: {correct_count}", 200, (0, 150, 0))
+            draw_text(f"Wrong answers: {wrong_count}", 250, (200, 0, 0))
+            draw_text("Press any key to exit...", 300)
             pygame.display.flip()
     
             waiting_for_exit = True
