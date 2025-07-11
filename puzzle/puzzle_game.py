@@ -14,7 +14,7 @@ import sys
 import difflib
 import glob
 from enum import Enum
-from typing import Optional, List, Dict, Any, Tuple
+
 
 
 class GameState(Enum):
@@ -369,7 +369,7 @@ def draw_mic_icon(screen, x, y):
 
 def draw_character(screen, character_image):
     if character_image:
-        img = pygame.transform.scale(character_image, (200, 200))
+        img = pygame.transform.scale(character_image, (300, 300))
         screen.blit(img, (GAME_CONFIG['WIDTH'] - img.get_width() - 30, GAME_CONFIG['HEIGHT'] - img.get_height() - 30))
 
 
