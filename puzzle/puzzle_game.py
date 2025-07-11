@@ -58,7 +58,7 @@ game_over_sound = pygame.mixer.Sound("./assets/gameover.mp3")
 mic_icon = pygame.image.load("./assets/mic.png")
 mic_icon = pygame.transform.scale(mic_icon, (40, 40))
 
-WIDTH, HEIGHT = 1300, 400
+WIDTH, HEIGHT = 1300, 500
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Voice-based puzzle game")
 font = pygame.font.Font("./assets/Vazirmatn-Regular.ttf", 28)
@@ -122,6 +122,25 @@ def draw_mic_icon(x, y):
     pygame.draw.circle(screen, MIC_ICON_COLOR, (x+20, y+20), 25, 3) 
     screen.blit(mic_icon, (x, y))
 
+
+def load_character_images(folder_name):
+    folder_path = os.path.join("./assets/character", folder_name)
+    images = glob.glob(os.path.join(folder_path, "*.png"))
+    return [pygame.image.load(img).convert_alpha() for img in images]
+
+character_sets = {
+    "thinking": load_character_images("thinking"),
+    "win": load_character_images("win"),
+    "lose": load_character_images("lose")
+}
+
+def draw_character(state_name):
+    if character_sets.get(state_name):
+        img = random.choice(character_sets[state_name])
+        img = pygame.transform.scale(img, (200, 200))
+        screen.blit(img, (WIDTH - img.get_width() - 30, HEIGHT - img.get_height() - 30))
+
+
 def main():
     global voice_lang
     running = True
@@ -138,6 +157,9 @@ def main():
     wrong_count = 0
     background = None
     message = ""
+    character_state = "thinking"
+    last_character_change = time.time()
+    current_character_image = random.choice(character_sets[character_state])
 
     while running:
         if state == "game" and background:
@@ -181,12 +203,12 @@ def main():
             if show_help:
                 draw_help()
             else:
-                draw_key_button("H", 200, 260)
-                draw_text("Show/Hide Help", 260, x=260,color=BLACK)
-                draw_key_button("F", 500, 260)
-                draw_text("Persian Language", 260, x=560,color=DARK_BLUE)
-                draw_key_button("E", 820, 260)
-                draw_text("English Language", 260, x=880,color=DARK_BLUE)
+                draw_key_button("H", 200, 340)
+                draw_text("Show/Hide Help", 340, x=260,color=BLACK)
+                draw_key_button("F", 500, 340)
+                draw_text("Persian Language", 340, x=560,color=DARK_BLUE)
+                draw_key_button("E", 820, 340)
+                draw_text("English Language", 340, x=880,color=DARK_BLUE)
 
         elif state == "game":
             if not puzzle:
@@ -200,10 +222,20 @@ def main():
                     background = load_random_background()
                     message = ""
             else:
+                if character_state == "thinking":
+                    now = time.time()
+                    if now - last_character_change > 3: 
+                        current_character_image = random.choice(character_sets[character_state])
+                        last_character_change = now
+
+                    img = pygame.transform.scale(current_character_image, (200, 200))
+                    screen.blit(img, (WIDTH - img.get_width() - 30, HEIGHT - img.get_height() - 30))
+
                 draw_text(f"Score: {score}", 20, RED)
                 draw_text("Puzzle:", 60 , color=DARK_BLUE)
                 draw_text(puzzle.prompt, 100 , color=YELLOW)
                 draw_text("Speak your answer...", 200)
+                
                 if int(time.time() * 2) % 2 == 0:
                     draw_mic_icon(400, 200)
 
@@ -239,22 +271,23 @@ def main():
                     pass
                 
         elif state == "end":
-            game_over_sound.play()
+            character_state  = "win"
+            if correct_count <= wrong_count:
+                character_state = "lose"
+
+            if int(time.time()) % 8 == 0:
+                game_over_sound.play()
+
             draw_text("Game Over!", 30)
             draw_text(f"Your final score: {score}", 90,color=YELLOW)
             draw_text(f"Total puzzles: {correct_count + wrong_count}", 140,color=YELLOW)
             draw_text(f"Correct answers: {correct_count}", 190,color=YELLOW)
             draw_text(f"Wrong answers: {wrong_count}", 240,color=RED)
-            draw_text("Press any key to exit...", 295)
+            draw_text("Press Q to exit...", 295)
+            draw_character(character_state)
             pygame.display.flip()
-    
-            waiting_for_exit = True
-            while waiting_for_exit:
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT or event.type == pygame.KEYDOWN:
-                        waiting_for_exit = False
-                        pygame.quit()
-                        sys.exit()
+            pygame.time.wait(900)
+            
         
         pygame.display.flip()
         pygame.time.wait(100)
