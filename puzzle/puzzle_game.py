@@ -95,14 +95,14 @@ def draw_key_button(text, x, y):
 
     pygame.draw.rect(screen, color, rect, border_radius=8)
     key_font = pygame.font.Font("./assets/Vazirmatn-Regular.ttf", 24)
-    txt = key_font.render(text, True, YELLOW)
+    txt = key_font.render(text, True, WHITE)
     screen.blit(txt, (x + 15, y + 8))
 
 def draw_help():
     box_width, box_height = 900, 330
     box_x = (WIDTH - box_width) // 2
     box_y = (HEIGHT - box_height) // 2
-    pygame.draw.rect(screen, YELLOW, (box_x, box_y, box_width, box_height), border_radius=12)
+    pygame.draw.rect(screen, WHITE, (box_x, box_y, box_width, box_height), border_radius=12)
 
 
     start_x = box_x + 20
@@ -165,7 +165,7 @@ def main():
     while running:
         if state == "game" and background:
             screen.blit(background, (0, 0))
-        elif state == "choose_lang" and not show_help:
+        elif state == "choose_lang":
             img = pygame.image.load("./assets/puzzle/first.jpg")
             bg= pygame.transform.scale(img, (WIDTH, HEIGHT))
             screen.blit(bg, (0, 0))
@@ -207,9 +207,9 @@ def main():
                 draw_key_button("H", 200, 340)
                 draw_text("Show/Hide Help", 340, x=260,color=BLACK)
                 draw_key_button("F", 500, 340)
-                draw_text("Persian Language", 340, x=560,color=DARK_BLUE)
+                draw_text("Persian Language", 340, x=560,color=WHITE)
                 draw_key_button("E", 820, 340)
-                draw_text("English Language", 340, x=880,color=DARK_BLUE)
+                draw_text("English Language", 340, x=880,color=WHITE)
 
         elif state == "game":
             if not puzzle:
