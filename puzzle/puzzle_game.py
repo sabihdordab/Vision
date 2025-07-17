@@ -53,17 +53,18 @@ MIC_ICON_COLOR = DARK_BLUE
 YELLOW = (247, 173, 25)
 LIGHT_BLUE = (159, 231, 245)
 
-correct_sound = pygame.mixer.Sound("./assets/correct.mp3")
-wrong_sound = pygame.mixer.Sound("./assets/error.mp3")
-game_over_sound = pygame.mixer.Sound("./assets/gameover.mp3")
-mic_icon = pygame.image.load("./assets/mic.png")
+ASSETS_DIR = BASE_DIR + "/assets/"
+correct_sound = pygame.mixer.Sound( ASSETS_DIR + "correct.mp3")
+wrong_sound = pygame.mixer.Sound(ASSETS_DIR + "error.mp3")
+game_over_sound = pygame.mixer.Sound(ASSETS_DIR + "gameover.mp3")
+mic_icon = pygame.image.load(ASSETS_DIR + "mic.png")
 mic_icon = pygame.transform.scale(mic_icon, (40, 40))
 
 WIDTH, HEIGHT = 1300, 500
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Voice-based puzzle game")
-font = pygame.font.Font("./assets/Vazirmatn-Regular.ttf", 28)
-bg_images = glob.glob(os.path.join("./assets/puzzle/backgrounds/", "*.jpg"))
+font = pygame.font.Font(ASSETS_DIR + "Vazirmatn-Regular.ttf", 28)
+bg_images = glob.glob(os.path.join(ASSETS_DIR + "bg/backgrounds/", "*.jpg"))
 
 def load_random_background():
     if not bg_images:
@@ -94,7 +95,7 @@ def draw_key_button(text, x, y):
         color = BLACK
 
     pygame.draw.rect(screen, color, rect, border_radius=8)
-    key_font = pygame.font.Font("./assets/Vazirmatn-Regular.ttf", 24)
+    key_font = pygame.font.Font(ASSETS_DIR +"Vazirmatn-Regular.ttf", 24)
     txt = key_font.render(text, True, WHITE)
     screen.blit(txt, (x + 15, y + 8))
 
@@ -124,7 +125,7 @@ def draw_mic_icon(x, y):
     screen.blit(mic_icon, (x, y))
 
 def load_character_images(folder_name):
-    folder_path = os.path.join("./assets/character", folder_name)
+    folder_path = os.path.join(ASSETS_DIR + "character", folder_name)
     images = glob.glob(os.path.join(folder_path, "*.png"))
     return [pygame.image.load(img).convert_alpha() for img in images]
 
@@ -166,7 +167,7 @@ def main():
         if state == "game" and background:
             screen.blit(background, (0, 0))
         elif state == "choose_lang":
-            img = pygame.image.load("./assets/puzzle/first.jpg")
+            img = pygame.image.load(ASSETS_DIR + "bg/first.jpg")
             bg= pygame.transform.scale(img, (WIDTH, HEIGHT))
             screen.blit(bg, (0, 0))
         else:
