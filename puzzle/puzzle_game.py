@@ -5,7 +5,6 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from models import Base, Puzzle
 import os
-import threading
 import queue
 import arabic_reshaper
 from bidi.algorithm import get_display
@@ -54,17 +53,21 @@ YELLOW = (247, 173, 25)
 LIGHT_BLUE = (159, 231, 245)
 
 ASSETS_DIR = BASE_DIR + "/assets/"
-correct_sound = pygame.mixer.Sound( ASSETS_DIR + "correct.mp3")
-wrong_sound = pygame.mixer.Sound(ASSETS_DIR + "error.mp3")
-game_over_sound = pygame.mixer.Sound(ASSETS_DIR + "gameover.mp3")
+correct_sound = pygame.mixer.Sound( ASSETS_DIR + "correct.wav")
+wrong_sound = pygame.mixer.Sound(ASSETS_DIR + "error.wav")
+win = pygame.mixer.Sound(ASSETS_DIR + "win.wav")
+lose = pygame.mixer.Sound(ASSETS_DIR + "lose.wav")
 mic_icon = pygame.image.load(ASSETS_DIR + "mic.png")
 mic_icon = pygame.transform.scale(mic_icon, (40, 40))
+gameover = pygame.image.load(ASSETS_DIR + "gameover.png")
+gameover= pygame.transform.scale(gameover, (400, 400))
 
 WIDTH, HEIGHT = 1300, 500
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Voice-based puzzle game")
 font = pygame.font.Font(ASSETS_DIR + "Vazirmatn-Regular.ttf", 28)
 bg_images = glob.glob(os.path.join(ASSETS_DIR + "bg/backgrounds/", "*.jpg"))
+
 
 def load_random_background():
     if not bg_images:
@@ -136,12 +139,17 @@ character_sets = {
 }
 
 
-def draw_character(state_name):
-    if character_sets.get(state_name):
-        img = random.choice(character_sets[state_name])
-        img = pygame.transform.scale(img, (200, 200))
-        screen.blit(img, (WIDTH - img.get_width() - 30, HEIGHT - img.get_height() - 30))
-
+def draw_end(screen,wrong_count,correct_count,score,current_character_image):
+    image_rect = gameover.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 50))
+    screen.blit(gameover, image_rect)
+    draw_text(f"Your final score: {score}", 90,color=YELLOW)
+    draw_text(f"Total puzzles: {correct_count + wrong_count}", 140,color=YELLOW)
+    draw_text(f"Correct answers: {correct_count}", 190,color=YELLOW)
+    draw_text(f"Wrong answers: {wrong_count}", 240,color=RED)
+    draw_text("Press Q to exit...", 295)
+    img = pygame.transform.scale(current_character_image, (200, 200))
+    screen.blit(img, (WIDTH - img.get_width() - 30, HEIGHT - img.get_height() - 30))
+    pygame.display.flip()
 
 def main():
     global voice_lang
@@ -160,8 +168,7 @@ def main():
     background = None
     message = ""
     character_state = "thinking"
-    last_character_change = time.time()
-    current_character_image = random.choice(character_sets[character_state])
+    current_character_image = None
 
     while running:
         if state == "game" and background:
@@ -177,10 +184,12 @@ def main():
                 draw_text(message, 350)
         time.sleep(sleep_time)
         sleep_time = 0
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-                if stop_listening: stop_listening()
+                pygame.quit()
+                sys.exit()
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_q:
                     pygame.quit()
@@ -214,8 +223,10 @@ def main():
 
         elif state == "game":
             if not puzzle:
+                current_character_image = random.choice(character_sets[character_state])
                 available = [p for p in session.query(Puzzle).filter_by(language=lang).all() if p.id not in used_puzzles]
                 if not available:
+                    current_character_image = None
                     message = "All puzzles completed!"
                     state = "end"
                 else:
@@ -225,15 +236,11 @@ def main():
                     message = ""
             else:
                 if character_state == "thinking":
-                    now = time.time()
-                    if now - last_character_change > 3: 
-                        current_character_image = random.choice(character_sets[character_state])
-                        last_character_change = now
-
                     img = pygame.transform.scale(current_character_image, (200, 200))
                     screen.blit(img, (WIDTH - img.get_width() - 30, HEIGHT - img.get_height() - 30))
 
                 draw_text(f"Score: {score}", 20, RED)
+                draw_text(f"Category: {puzzle.category}", 20, RED)
                 draw_text("Puzzle:", 60 , color=DARK_BLUE)
                 draw_text(puzzle.prompt, 100 , color=YELLOW)
                 draw_text("Speak your answer...", 200)
@@ -251,6 +258,7 @@ def main():
                         elif user_input == "__unknown_error__":
                             message = "An unknown error occurred."
                         elif user_input in ["exit", "خروج"]:
+                            current_character_image = None
                             message = "Goodbye! خداافز"
                             state = "end"
                         elif user_input in ["i don't know", "نمی‌دونم", "نمیدونم"]:
@@ -273,24 +281,19 @@ def main():
                     pass
                 
         elif state == "end":
-            character_state  = "win"
-            if correct_count <= wrong_count:
-                character_state = "lose"
+            if current_character_image == None:
+                character_state  = "win"
+                if correct_count <= wrong_count:
+                    character_state = "lose"
+                current_character_image = random.choice(character_sets[character_state])
+                if character_state == "win":
+                    win.play()
+                else:
+                    lose.play()
+                
+            draw_end(screen,wrong_count,correct_count,score,current_character_image)
 
-            if int(time.time()) % 8 == 0:
-                game_over_sound.play()
-
-            draw_text("Game Over!", 30)
-            draw_text(f"Your final score: {score}", 90,color=YELLOW)
-            draw_text(f"Total puzzles: {correct_count + wrong_count}", 140,color=YELLOW)
-            draw_text(f"Correct answers: {correct_count}", 190,color=YELLOW)
-            draw_text(f"Wrong answers: {wrong_count}", 240,color=RED)
-            draw_text("Press Q to exit...", 295)
-            draw_character(character_state)
-            pygame.display.flip()
-            pygame.time.wait(900)
             
-        
         pygame.display.flip()
         pygame.time.wait(100)
 
