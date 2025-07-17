@@ -17,11 +17,11 @@ audio_queue = queue.Queue()
 
 GRID_SIZE = 3
 TILE_SIZE = 100
-HEADER_HEIGHT = 50
+HEADER_HEIGHT = 75
 WINDOW_WIDTH = GRID_SIZE * TILE_SIZE
 WINDOW_HEIGHT = GRID_SIZE * TILE_SIZE + HEADER_HEIGHT
 
-REFRESH_BUTTON_POS = (WINDOW_WIDTH - 50, 10)
+REFRESH_BUTTON_POS = (WINDOW_WIDTH - 50, 30)
 REFRESH_BUTTON_SIZE = (32, 32)
 
 
@@ -116,6 +116,32 @@ def get_audio_input():
 def normalize_answer(answer):
     return answer.strip().lower()
 
+def draw_help_screen(screen, font):
+    screen.fill((20, 20, 20))
+
+    help_text = [
+        "__8-Puzzle Game Help__",
+        "",
+        "* Voice Commands (in Persian):",
+        "    baalaa -> Move up",
+        "    paaeen -> Move down",
+        "    chap -> Move left",
+        "    raast -> Move right",
+        "",
+        "* Press R or click the refresh icon to reshuffle tiles.",
+        "* Click the mic icon to turn voice input on/off.",
+        "* Press H to toggle this help screen.",
+        "",
+        "* Press H again to return to the game."
+    ]
+
+    y = 20
+    for line in help_text:
+        rendered = font.render(line, True, (255, 255, 255))
+        screen.blit(rendered, (20, y))
+        y += 20
+
+    pygame.display.flip()
 
 def main():
     pygame.init()
@@ -124,8 +150,18 @@ def main():
     screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     pygame.display.set_caption("8 Puzzle")
 
+    showing_help = False
     refresh_icon = pygame.image.load(ICON_PATH)
     refresh_icon = pygame.transform.scale(refresh_icon, REFRESH_BUTTON_SIZE)
+    mic_icon_size = (70, 60)
+    mic_icon = pygame.image.load(os.path.join(base_dir, "assets", "mic_on.png"))
+    mic_icon = pygame.transform.scale(mic_icon, mic_icon_size)
+    mic_icon_x = WINDOW_WIDTH - 110
+    mic_icon_rect = pygame.Rect(mic_icon_x, 10, *mic_icon_size)
+
+    mic_active = True
+    blink_timer = 0
+    show_mic = True
 
     tile_folder = choose_random_tile_folder()
     tiles = load_tiles(tile_folder)
@@ -143,28 +179,44 @@ def main():
                     tile_folder = choose_random_tile_folder()
                     tiles = load_tiles(tile_folder)
                     shuffled_order = generate_shuffled_order()
+                if mic_icon_rect.collidepoint(event.pos):
+                    mic_active = not mic_active
+                    if mic_active:
+                        start_listening()
+                    else:
+                        stop_listening(wait_for_stop=False)
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
                     tile_folder = choose_random_tile_folder()
                     tiles = load_tiles(tile_folder)
                     shuffled_order = generate_shuffled_order()
+                elif event.key == pygame.K_h:
+                    showing_help = not showing_help
             
         try:
-            inp = get_audio_input()
-            if inp:
-                voice_command = normalize_answer(inp)
-                last_voice_command = voice_command
-                if "بالا" in voice_command:
-                    shuffled_order = move_empty(shuffled_order, "up")
-                elif "پایین" in voice_command:
-                    shuffled_order = move_empty(shuffled_order, "down")
-                elif "چپ" in voice_command:
-                    shuffled_order = move_empty(shuffled_order, "left")
-                elif "راست" in voice_command:
-                    shuffled_order = move_empty(shuffled_order, "right")
+            if mic_active:
+                inp = get_audio_input()
+                if inp:
+                    voice_command = normalize_answer(inp)
+                    last_voice_command = voice_command
+                    if "بالا" in voice_command:
+                        shuffled_order = move_empty(shuffled_order, "up")
+                    elif "پایین" in voice_command:
+                        shuffled_order = move_empty(shuffled_order, "down")
+                    elif "چپ" in voice_command:
+                        shuffled_order = move_empty(shuffled_order, "left")
+                    elif "راست" in voice_command:
+                        shuffled_order = move_empty(shuffled_order, "right")
         except queue.Empty:
             pass
+        
+        
 
+        if showing_help:
+            hfont = pygame.font.Font(base_dir+"/assets/Vazirmatn-Regular.ttf", 10)
+            draw_help_screen(screen, hfont)
+            continue 
+        
         screen.fill((30, 30, 30))
         screen.blit(refresh_icon, REFRESH_BUTTON_POS)
         draw_grid(screen, tiles, shuffled_order)
@@ -174,7 +226,15 @@ def main():
         reshaped_text = arabic_reshaper.reshape(last_voice_command)
         bidi_text = get_display(reshaped_text)
         rendered = font.render(bidi_text, True,(255, 255, 255))
-        screen.blit(rendered, (10, 10))
+        screen.blit(rendered, (10, HEADER_HEIGHT - 50))
+
+
+        if mic_active:
+            if show_mic:
+                screen.blit(mic_icon, mic_icon_rect.topleft)
+        else:
+            screen.blit(mic_icon, mic_icon_rect.topleft)
+            pygame.draw.line(screen, (255, 0, 0), mic_icon_rect.topleft, mic_icon_rect.bottomright, 3)
 
         pygame.display.flip()
 
