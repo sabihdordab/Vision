@@ -17,7 +17,7 @@ font = pygame.font.Font("assets/TTOctosquaresItalic.ttf", 15)
 title_font = pygame.font.Font("assets/TTOctosquaresExpXBoldIt.ttf", 48)
 
 # ========== Assets ==========
-img = pygame.image.load('assets/boy.jpg')
+img = pygame.image.load('assets/girl.png')
 img = pygame.transform.scale(img, (200, 200))
 click_sound = pygame.mixer.Sound('assets/click.wav')
 pygame.mixer.music.load('assets/30 Singularity.mp3') 
