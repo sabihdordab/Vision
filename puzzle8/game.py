@@ -23,7 +23,9 @@ WINDOW_HEIGHT = GRID_SIZE * TILE_SIZE + HEADER_HEIGHT
 
 REFRESH_BUTTON_POS = (WINDOW_WIDTH - 50, 30)
 REFRESH_BUTTON_SIZE = (32, 32)
-
+WIN_MUSIC_PATH = os.path.join(base_dir, "assets", "win.wav")
+win_image = pygame.image.load(os.path.join(base_dir, "assets", "win_image.png"))
+win_image = pygame.transform.scale(win_image, (100, 100)) 
 
 def choose_random_tile_folder():
     folders = [f for f in os.listdir(TILES_BASE_FOLDER) if os.path.isdir(os.path.join(TILES_BASE_FOLDER, f))]
@@ -51,6 +53,7 @@ def draw_grid(screen, tiles, order):
 
 def is_solved(order):
     return order == list(range(GRID_SIZE * GRID_SIZE))
+
 
 def generate_shuffled_order():
     order = list(range(GRID_SIZE * GRID_SIZE))
@@ -131,6 +134,7 @@ def draw_help_screen(screen, font):
         "* Press R or click the refresh icon to reshuffle tiles.",
         "* Click the mic icon to turn voice input on/off.",
         "* Press H to toggle this help screen.",
+        "* Press Q to Exit.",
         "",
         "* Press H again to return to the game."
     ]
@@ -143,9 +147,23 @@ def draw_help_screen(screen, font):
 
     pygame.display.flip()
 
+
+def draw_win(screen, win_image):
+    screen.fill((0, 0, 0))
+    image_rect = win_image.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 - 50))
+    screen.blit(win_image, image_rect)
+
+    small_font = pygame.font.Font(base_dir + "/assets/Vazirmatn-Regular.ttf", 20) 
+    text = small_font.render("Press SPACE to play again.", True, (255, 255, 0))
+    rect = text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + 40))
+    screen.blit(text, rect)
+
+    pygame.display.flip()
+
+
 def main():
     pygame.init()
-    font = pygame.font.Font(base_dir+"/assets/Vazirmatn-Regular.ttf", 28)
+    font = pygame.font.Font(base_dir+"/assets/Vazirmatn-Regular.ttf", 20)
     last_voice_command = ""
     screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     pygame.display.set_caption("8 Puzzle")
@@ -160,39 +178,52 @@ def main():
     mic_icon_rect = pygame.Rect(mic_icon_x, 10, *mic_icon_size)
 
     mic_active = True
-    blink_timer = 0
-    show_mic = True
 
     tile_folder = choose_random_tile_folder()
     tiles = load_tiles(tile_folder)
     shuffled_order = generate_shuffled_order()
 
     start_listening()
+    game_won = False
 
     running = True
     while running:
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if is_refresh_clicked(event.pos):
-                    tile_folder = choose_random_tile_folder()
-                    tiles = load_tiles(tile_folder)
-                    shuffled_order = generate_shuffled_order()
-                if mic_icon_rect.collidepoint(event.pos):
-                    mic_active = not mic_active
-                    if mic_active:
-                        start_listening()
-                    else:
-                        stop_listening(wait_for_stop=False)
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_r:
-                    tile_folder = choose_random_tile_folder()
-                    tiles = load_tiles(tile_folder)
-                    shuffled_order = generate_shuffled_order()
-                elif event.key == pygame.K_h:
-                    showing_help = not showing_help
-            
+            elif game_won and event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                pygame.mixer.music.stop()
+                tile_folder = choose_random_tile_folder()
+                tiles = load_tiles(tile_folder)
+                shuffled_order = generate_shuffled_order()
+                last_voice_command = ""
+                game_won = False
+
+            if not game_won:    
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if is_refresh_clicked(event.pos):
+                        tile_folder = choose_random_tile_folder()
+                        tiles = load_tiles(tile_folder)
+                        shuffled_order = generate_shuffled_order()
+                    if mic_icon_rect.collidepoint(event.pos):
+                        mic_active = not mic_active
+                        if mic_active:
+                            start_listening()
+                        else:
+                            stop_listening(wait_for_stop=False)
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_q:
+                            running = False
+                    if event.key == pygame.K_r:
+                        tile_folder = choose_random_tile_folder()
+                        tiles = load_tiles(tile_folder)
+                        shuffled_order = generate_shuffled_order()
+                    elif event.key == pygame.K_h:
+                        showing_help = not showing_help
+
+  
+
         try:
             if mic_active:
                 inp = get_audio_input()
@@ -210,7 +241,12 @@ def main():
         except queue.Empty:
             pass
         
-        
+        if not game_won and is_solved(shuffled_order):
+            game_won = True
+            stop_listening(wait_for_stop=False)
+            pygame.mixer.music.load(WIN_MUSIC_PATH)
+            pygame.mixer.music.play() 
+
 
         if showing_help:
             hfont = pygame.font.Font(base_dir+"/assets/Vazirmatn-Regular.ttf", 10)
@@ -230,11 +266,14 @@ def main():
 
 
         if mic_active:
-            if show_mic:
-                screen.blit(mic_icon, mic_icon_rect.topleft)
+            screen.blit(mic_icon, mic_icon_rect.topleft)
         else:
             screen.blit(mic_icon, mic_icon_rect.topleft)
             pygame.draw.line(screen, (255, 0, 0), mic_icon_rect.topleft, mic_icon_rect.bottomright, 3)
+
+        if game_won:
+            draw_win(screen,win_image)
+            continue  
 
         pygame.display.flip()
 
