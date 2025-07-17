@@ -25,7 +25,7 @@ REFRESH_BUTTON_POS = (WINDOW_WIDTH - 50, 30)
 REFRESH_BUTTON_SIZE = (32, 32)
 WIN_MUSIC_PATH = os.path.join(base_dir, "assets", "win.wav")
 win_image = pygame.image.load(os.path.join(base_dir, "assets", "win_image.png"))
-win_image = pygame.transform.scale(win_image, (100, 100)) 
+win_image = pygame.transform.scale(win_image, (200, 200)) 
 
 def choose_random_tile_folder():
     folders = [f for f in os.listdir(TILES_BASE_FOLDER) if os.path.isdir(os.path.join(TILES_BASE_FOLDER, f))]
@@ -120,28 +120,30 @@ def normalize_answer(answer):
     return answer.strip().lower()
 
 def draw_help_screen(screen, font):
-    screen.fill((20, 20, 20))
+    screen.fill((255,255,255))
 
     help_text = [
-        "__8-Puzzle Game Help__",
-        "",
-        "* Voice Commands (in Persian):",
-        "    baalaa -> Move up",
-        "    paaeen -> Move down",
-        "    chap -> Move left",
-        "    raast -> Move right",
-        "",
-        "* Press R or click the refresh icon to reshuffle tiles.",
-        "* Click the mic icon to turn voice input on/off.",
-        "* Press H to toggle this help screen.",
-        "* Press Q to Exit.",
-        "",
-        "* Press H again to return to the game."
-    ]
-
+    "__8-Puzzle Game Help__",
+    "",
+    "* Voice Commands (in Persian):",
+    "    baalaa -> Move up",
+    "    paaeen -> Move down",
+    "    chap -> Move left",
+    "    raast -> Move right",
+    "",
+    "* Keyboard Controls (when mic is OFF):",
+    "    Arrow keys -> Move tiles",
+    "",
+    "* Press R or click the refresh icon to reshuffle tiles.",
+    "* Click the mic icon to turn voice input on/off.",
+    "* Press H to toggle this help screen.",
+    "* Press Q to Exit.",
+    "",
+    "* Press H again to return to the game."
+]
     y = 20
     for line in help_text:
-        rendered = font.render(line, True, (255, 255, 255))
+        rendered = font.render(line, True, (255, 0 , 0))
         screen.blit(rendered, (20, y))
         y += 20
 
@@ -149,13 +151,13 @@ def draw_help_screen(screen, font):
 
 
 def draw_win(screen, win_image):
-    screen.fill((0, 0, 0))
+    screen.fill((255, 255, 255))
     image_rect = win_image.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 - 50))
     screen.blit(win_image, image_rect)
 
-    small_font = pygame.font.Font(base_dir + "/assets/Vazirmatn-Regular.ttf", 20) 
-    text = small_font.render("Press SPACE to play again.", True, (255, 255, 0))
-    rect = text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + 40))
+    small_font = pygame.font.Font(base_dir + "/assets/Vazirmatn-Regular.ttf", 15) 
+    text = small_font.render("Press SPACE to play again.", True, (50, 0, 250))
+    rect = text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + 80))
     screen.blit(text, rect)
 
     pygame.display.flip()
@@ -221,8 +223,19 @@ def main():
                         shuffled_order = generate_shuffled_order()
                     elif event.key == pygame.K_h:
                         showing_help = not showing_help
-
-  
+                    elif not mic_active:
+                        if event.key == pygame.K_UP:
+                            shuffled_order = move_empty(shuffled_order, "up")
+                            last_voice_command = "up"
+                        elif event.key == pygame.K_DOWN:
+                            shuffled_order = move_empty(shuffled_order, "down")
+                            last_voice_command = "down"
+                        elif event.key == pygame.K_LEFT:
+                            shuffled_order = move_empty(shuffled_order, "left")
+                            last_voice_command = "left"
+                        elif event.key == pygame.K_RIGHT:
+                            shuffled_order = move_empty(shuffled_order, "right")
+                            last_voice_command = "right"
 
         try:
             if mic_active:
@@ -253,23 +266,21 @@ def main():
             draw_help_screen(screen, hfont)
             continue 
         
-        screen.fill((30, 30, 30))
+        screen.fill((255,255,255))
         screen.blit(refresh_icon, REFRESH_BUTTON_POS)
-        draw_grid(screen, tiles, shuffled_order)
-        
-
-
-        reshaped_text = arabic_reshaper.reshape(last_voice_command)
-        bidi_text = get_display(reshaped_text)
-        rendered = font.render(bidi_text, True,(255, 255, 255))
-        screen.blit(rendered, (10, HEADER_HEIGHT - 50))
-
-
         if mic_active:
             screen.blit(mic_icon, mic_icon_rect.topleft)
         else:
             screen.blit(mic_icon, mic_icon_rect.topleft)
             pygame.draw.line(screen, (255, 0, 0), mic_icon_rect.topleft, mic_icon_rect.bottomright, 3)
+
+        draw_grid(screen, tiles, shuffled_order)
+        
+        reshaped_text = arabic_reshaper.reshape(last_voice_command)
+        bidi_text = get_display(reshaped_text)
+        rendered = font.render(bidi_text, True,(0, 200, 250))
+        screen.blit(rendered, (10, HEADER_HEIGHT - 50))
+
 
         if game_won:
             draw_win(screen,win_image)
