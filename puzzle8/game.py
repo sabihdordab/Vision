@@ -10,6 +10,7 @@ from bidi.algorithm import get_display
 base_dir = os.path.dirname(os.path.abspath(__file__))
 TILES_BASE_FOLDER = os.path.join(base_dir, "tiles")  
 ICON_PATH = os.path.join(base_dir, "assets", "refresh.png")
+HELP_ICON_PATH = os.path.join(base_dir, "assets", "help.png")
 
 recognizer = sr.Recognizer()
 mic = sr.Microphone()
@@ -143,7 +144,7 @@ def draw_help_screen(screen, font):
 ]
     y = 20
     for line in help_text:
-        rendered = font.render(line, True, (255, 0 , 0))
+        rendered = font.render(line, True, (0, 0 , 255))
         screen.blit(rendered, (20, y))
         y += 20
 
@@ -170,7 +171,6 @@ def main():
     screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     pygame.display.set_caption("8 Puzzle")
 
-    showing_help = False
     refresh_icon = pygame.image.load(ICON_PATH)
     refresh_icon = pygame.transform.scale(refresh_icon, REFRESH_BUTTON_SIZE)
     mic_icon_size = (70, 60)
@@ -178,8 +178,15 @@ def main():
     mic_icon = pygame.transform.scale(mic_icon, mic_icon_size)
     mic_icon_x = WINDOW_WIDTH - 110
     mic_icon_rect = pygame.Rect(mic_icon_x, 10, *mic_icon_size)
+    help_icon_size = (50, 50)
+    help_icon = pygame.image.load(HELP_ICON_PATH)
+    help_icon = pygame.transform.scale(help_icon, help_icon_size)
+    help_icon_x = mic_icon_x - 30
+    help_icon_rect = pygame.Rect(help_icon_x, 20, *help_icon_size)
+
 
     mic_active = True
+    showing_help = False
 
     tile_folder = choose_random_tile_folder()
     tiles = load_tiles(tile_folder)
@@ -214,6 +221,9 @@ def main():
                             start_listening()
                         else:
                             stop_listening(wait_for_stop=False)
+                    if help_icon_rect.collidepoint(event.pos):
+                        showing_help = not showing_help
+
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_q:
                             running = False
@@ -273,12 +283,13 @@ def main():
         else:
             screen.blit(mic_icon, mic_icon_rect.topleft)
             pygame.draw.line(screen, (255, 0, 0), mic_icon_rect.topleft, mic_icon_rect.bottomright, 3)
+        screen.blit(help_icon, help_icon_rect.topleft)
 
         draw_grid(screen, tiles, shuffled_order)
         
         reshaped_text = arabic_reshaper.reshape(last_voice_command)
         bidi_text = get_display(reshaped_text)
-        rendered = font.render(bidi_text, True,(0, 200, 250))
+        rendered = font.render(bidi_text, True,(0, 0, 0))
         screen.blit(rendered, (10, HEADER_HEIGHT - 50))
 
 
