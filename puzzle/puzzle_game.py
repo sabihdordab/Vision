@@ -44,7 +44,8 @@ pygame.init()
 pygame.mixer.init()
 
 BLACK = (0,0,0) 
-BG_COLOR = BLACK            
+WHITE = (255, 255, 255)  
+BG_COLOR = WHITE           
 WHITE = (255, 255, 255)              
 DARK_BLUE = (0, 0, 200)
 RED = (255, 0, 0)
@@ -58,7 +59,7 @@ wrong_sound = pygame.mixer.Sound(ASSETS_DIR + "error.wav")
 win = pygame.mixer.Sound(ASSETS_DIR + "win.wav")
 lose = pygame.mixer.Sound(ASSETS_DIR + "lose.wav")
 mic_icon = pygame.image.load(ASSETS_DIR + "mic.png")
-mic_icon = pygame.transform.scale(mic_icon, (40, 40))
+mic_icon = pygame.transform.scale(mic_icon, (90, 70))
 gameover = pygame.image.load(ASSETS_DIR + "gameover.png")
 gameover= pygame.transform.scale(gameover, (400, 400))
 
@@ -123,9 +124,6 @@ def draw_help():
     draw_text("Say 'exit'|'خروج' or press Q to quit the game", start_y + 220, x=start_x,color=BLACK)
     draw_text("Say 'I don't know'|'نمی دونم' to skip a puzzle", start_y + 260, x=start_x,color=BLACK)
 
-def draw_mic_icon(x, y):
-    pygame.draw.circle(screen, MIC_ICON_COLOR, (x+20, y+20), 25, 3) 
-    screen.blit(mic_icon, (x, y))
 
 def load_character_images(folder_name):
     folder_path = os.path.join(ASSETS_DIR + "character", folder_name)
@@ -142,11 +140,11 @@ character_sets = {
 def draw_end(screen,wrong_count,correct_count,score,current_character_image):
     image_rect = gameover.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 50))
     screen.blit(gameover, image_rect)
-    draw_text(f"Your final score: {score}", 90,color=YELLOW)
-    draw_text(f"Total puzzles: {correct_count + wrong_count}", 140,color=YELLOW)
-    draw_text(f"Correct answers: {correct_count}", 190,color=YELLOW)
+    draw_text(f"Your final score: {score}", 90,color=RED)
+    draw_text(f"Total puzzles: {correct_count + wrong_count}", 140,color=DARK_BLUE)
+    draw_text(f"Correct answers: {correct_count}", 190,color=(0,255,60))
     draw_text(f"Wrong answers: {wrong_count}", 240,color=RED)
-    draw_text("Press Q to exit...", 295)
+    draw_text("Press Q to exit...", 295,color=BLACK)
     img = pygame.transform.scale(current_character_image, (200, 200))
     screen.blit(img, (WIDTH - img.get_width() - 30, HEIGHT - img.get_height() - 30))
     pygame.display.flip()
@@ -240,26 +238,25 @@ def main():
                     screen.blit(img, (WIDTH - img.get_width() - 30, HEIGHT - img.get_height() - 30))
 
                 draw_text(f"Score: {score}", 20, RED)
-                draw_text(f"Category: {puzzle.category}", 20, RED)
-                draw_text("Puzzle:", 60 , color=DARK_BLUE)
-                draw_text(puzzle.prompt, 100 , color=YELLOW)
-                draw_text("Speak your answer...", 200)
-                
+                draw_text(f"Category: {puzzle.category}", 70, DARK_BLUE)
+                draw_text("Puzzle:", 110 , color=DARK_BLUE)
+                draw_text(puzzle.prompt, 160 , color=WHITE)
+
                 if int(time.time() * 2) % 2 == 0:
-                    draw_mic_icon(400, 200)
+                    screen.blit(mic_icon, (1150, 90))
 
                 try:
                     user_input = audio_queue.get_nowait()
                     if user_input:
                         if user_input == "__speech_not_understood__":
-                            message = "Didn't catch that. Please try again."
+                            message = "Didn't catch that."
                         elif user_input == "__speech_service_error__":
-                            message = "Connection problem. Please check your internet."
+                            message = "Connection problem."
                         elif user_input == "__unknown_error__":
                             message = "An unknown error occurred."
                         elif user_input in ["exit", "خروج"]:
                             current_character_image = None
-                            message = "Goodbye! خداافز"
+                            message = ""
                             state = "end"
                         elif user_input in ["i don't know", "نمی‌دونم", "نمیدونم"]:
                             # message = f"The correct answer was: {puzzle.answer}"
@@ -275,7 +272,7 @@ def main():
                             score += 2
                             correct_count += 1
                         else:
-                            message = f"X Incorrect ,you said: {user_input}.Try again..."
+                            message = f"X Incorrect ,you said: {user_input}."
                             wrong_sound.play()
                 except queue.Empty:
                     pass
