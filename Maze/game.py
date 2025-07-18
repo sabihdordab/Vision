@@ -31,6 +31,10 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ASSETS_DIR = BASE_DIR + "/assets/"
 MAZE_FILE = os.path.join(BASE_DIR, "mazes.txt")
 
+done_sound = pygame.mixer.Sound( ASSETS_DIR + "done.wav")
+error_sound = pygame.mixer.Sound( ASSETS_DIR + "error.wav")
+
+
 def load_mazes_from_file(filename):
     mazes = []
     current_maze = []
@@ -96,7 +100,8 @@ def main():
     mazes = load_mazes_from_file(MAZE_FILE)
     maze_index = 0
     maze = mazes[maze_index]
-    player_x, player_y = find_start(maze)
+    start_x, start_y = find_start(maze)
+    player_x, player_y = start_x, start_y
 
     clock = pygame.time.Clock()
     running = True
@@ -118,12 +123,17 @@ def main():
 
         if can_move(maze, new_x, new_y):
             player_x, player_y = new_x, new_y
+        else:
+            if player_x != start_x and player_y != start_y:
+                error_sound.play()
 
         if maze[player_y][player_x] == 3:
             print(f"{maze_index + 1} Done")
             result = next_maze(mazes, maze_index)
             if result[0] is not None:
+                done_sound.play()
                 maze_index, maze, (player_x, player_y) = result
+                start_x, start_y = player_x, player_y
                 pygame.time.delay(500)
             else:
                 print("Bye")
