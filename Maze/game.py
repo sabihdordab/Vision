@@ -36,6 +36,11 @@ MAZE_FILE = os.path.join(BASE_DIR, "mazes.txt")
 
 done_sound = pygame.mixer.Sound( ASSETS_DIR + "done.wav")
 error_sound = pygame.mixer.Sound( ASSETS_DIR + "error.wav")
+camera_img = pygame.image.load(ASSETS_DIR + "camera.png")
+exit_img = pygame.image.load(ASSETS_DIR + "exit.png")
+
+camera_img = pygame.transform.scale(camera_img, (50, 50))
+exit_img = pygame.transform.scale(exit_img, (50, 50))
 
 hand_x, hand_y = 0, 0
 mp_hands = mp.solutions.hands
@@ -137,6 +142,15 @@ def cvframe_to_pygame(frame):
     frame = pygame.surfarray.make_surface(frame.swapaxes(0, 1))
     return frame
 
+def draw_icons(img,pos):
+
+    screen.blit(img,pos)
+
+    img_rect = pygame.Rect(pos[0],pos[1], 50, 50)
+
+    return img_rect
+
+
 def main():
     mazes = load_mazes_from_file(MAZE_FILE)
     maze_index = 0
@@ -147,6 +161,9 @@ def main():
     clock = pygame.time.Clock()
 
     cap = cv2.VideoCapture(0)
+    camera_on = True
+    camera_pos = (10, HEIGHT - 130)
+    exit_pos = (70, HEIGHT - 130)
 
     running = True
 
@@ -155,9 +172,26 @@ def main():
         draw_maze(maze)
         draw_player(player_x, player_y)
 
+        cam_rect = draw_icons(camera_img,camera_pos)
+        exit_rect = draw_icons(exit_img,exit_pos)
+        if not camera_on:
+            start_pos1 = camera_pos
+            end_pos1 = (camera_pos[0] + 50, camera_pos[1] + 50)
+            start_pos2 = (camera_pos[0], camera_pos[1] + 50)
+            end_pos2 = (camera_pos[0] + 50, camera_pos[1])
+
+            pygame.draw.line(screen, (255, 0, 0), start_pos1, end_pos1, 4)
+            pygame.draw.line(screen, (255, 0, 0), start_pos2, end_pos2, 4)
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mx, my = pygame.mouse.get_pos()
+                if cam_rect.collidepoint(mx, my):
+                    camera_on = not camera_on
+                elif exit_rect.collidepoint(mx, my):
+                    running = False
 
         keys = pygame.key.get_pressed()
         dx, dy = handle_input(keys)
