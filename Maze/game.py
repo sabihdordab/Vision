@@ -8,7 +8,7 @@ import threading
 pygame.init()
 TILE_SIZE = 80
 GRID_WIDTH = 6
-GRID_HEIGHT = 6
+GRID_HEIGHT = 7
 WIDTH = GRID_WIDTH * TILE_SIZE
 HEIGHT = GRID_HEIGHT * TILE_SIZE
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -27,7 +27,7 @@ COLORS = {
     "start": BLUE,
     "goal": GREEN,
     "player": RED,
-    "bg": (200, 200, 200),
+    "bg": (0, 0, 0),
 }
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -38,6 +38,14 @@ done_sound = pygame.mixer.Sound( ASSETS_DIR + "done.wav")
 error_sound = pygame.mixer.Sound( ASSETS_DIR + "error.wav")
 
 hand_x, hand_y = 0, 0
+mp_hands = mp.solutions.hands
+mp_drawing = mp.solutions.drawing_utils
+hands = mp_hands.Hands(
+    static_image_mode=False,       
+    max_num_hands=1,                
+    min_detection_confidence=0.5,   
+    min_tracking_confidence=0.5     
+)
 
 def load_mazes_from_file(filename):
     mazes = []
@@ -108,6 +116,27 @@ def show_game_over():
     pygame.display.update()
     pygame.time.wait(3000)
 
+def get_hand_frame(cap, hands):
+    ret, frame = cap.read()
+    if not ret:
+        return None
+    
+    frame = cv2.flip(frame, 1)
+    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    results = hands.process(rgb_frame)
+
+    if results.multi_hand_landmarks:
+        for hand_landmarks in results.multi_hand_landmarks:
+            mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+    
+    return frame
+
+def cvframe_to_pygame(frame):
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  
+    frame = cv2.resize(frame, (160, 120))  
+    frame = pygame.surfarray.make_surface(frame.swapaxes(0, 1))
+    return frame
+
 def main():
     mazes = load_mazes_from_file(MAZE_FILE)
     maze_index = 0
@@ -116,6 +145,9 @@ def main():
     player_x, player_y = start_x, start_y
 
     clock = pygame.time.Clock()
+
+    cap = cv2.VideoCapture(0)
+
     running = True
 
     while running:
@@ -151,10 +183,16 @@ def main():
                 show_game_over()
                 print("Bye")
                 running = False
+        frame = get_hand_frame(cap, hands)
+        if frame is not None:
+            hand_surface = cvframe_to_pygame(frame)
+            screen.blit(hand_surface, (WIDTH - 160, HEIGHT - 120))
 
         pygame.display.update()
         clock.tick(10)
 
+    cap.release()
+    hands.close()
     pygame.quit()
 
 
