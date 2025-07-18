@@ -38,9 +38,11 @@ done_sound = pygame.mixer.Sound( ASSETS_DIR + "done.wav")
 error_sound = pygame.mixer.Sound( ASSETS_DIR + "error.wav")
 camera_img = pygame.image.load(ASSETS_DIR + "camera.png")
 exit_img = pygame.image.load(ASSETS_DIR + "exit.png")
+help_img = pygame.image.load(ASSETS_DIR + "help.png")
 
 camera_img = pygame.transform.scale(camera_img, (50, 50))
 exit_img = pygame.transform.scale(exit_img, (50, 50))
+help_img = pygame.transform.scale(help_img, (70, 60))
 
 hand_x, hand_y = 0, 0
 mp_hands = mp.solutions.hands
@@ -150,6 +152,39 @@ def draw_icons(img,pos):
 
     return img_rect
 
+def draw_help():
+    screen.fill((240, 240, 240))
+
+    font_title = pygame.font.SysFont("arial", 40, bold=True)
+    font_text = pygame.font.SysFont("arial", 15)
+
+    title_surf = font_title.render("Game Instructions", True, (0, 0, 0))
+    screen.blit(title_surf, (WIDTH//2 - title_surf.get_width()//2, 40))
+
+
+    instructions = [
+        "Game Instructions:",
+        "",
+        "When the camera is ON:",
+        "Solve the maze using your index finger in front of the webcam.",
+        "Your finger acts as a virtual joystick to move the player.",
+        "",
+        "When the camera is OFF:",
+        "Use the keyboard arrow keys to move the player manually.",
+    ]
+
+    y = 120
+    for line in instructions:
+        text_surf = font_text.render(line, True, (30, 30, 30))
+        screen.blit(text_surf, (50, y))
+        y += 35
+
+    return_font = pygame.font.SysFont("arial", 20, bold=True)
+    return_text = return_font.render("Press Space to return", True, (0, 0, 255))
+    screen.blit(return_text, (75, HEIGHT - 70))
+
+
+
 
 def main():
     mazes = load_mazes_from_file(MAZE_FILE)
@@ -165,6 +200,9 @@ def main():
     camera_on = False
     camera_pos = (10, HEIGHT - 130)
     exit_pos = (70, HEIGHT - 130)
+    help_pos = (120,HEIGHT - 130)
+
+    help_on = False
 
     running = True
 
@@ -175,6 +213,8 @@ def main():
 
         cam_rect = draw_icons(camera_img,camera_pos)
         exit_rect = draw_icons(exit_img,exit_pos)
+        help_rect = draw_icons(help_img,help_pos)
+
         if not camera_on:
             start_pos1 = camera_pos
             end_pos1 = (camera_pos[0] + 50, camera_pos[1] + 50)
@@ -187,6 +227,9 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    help_on = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mx, my = pygame.mouse.get_pos()
                 if cam_rect.collidepoint(mx, my):
@@ -199,9 +242,14 @@ def main():
                         camera_on = True
                 elif exit_rect.collidepoint(mx, my):
                     running = False
+                elif help_rect.collidepoint(mx, my):
+                    help_on = True
+        if help_on:
+            draw_help()
 
-        keys = pygame.key.get_pressed()
-        dx, dy = handle_input(keys)
+        if not camera_on:
+            keys = pygame.key.get_pressed()
+            dx, dy = handle_input(keys)
 
         new_x = player_x + dx
         new_y = player_y + dy
@@ -233,7 +281,7 @@ def main():
         pygame.display.update()
         clock.tick(10)
 
-    cap.release()
+    if cap : cap.release()
     hands.close()
     pygame.quit()
 
