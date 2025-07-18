@@ -1,5 +1,8 @@
 import pygame
 import os
+import cv2
+import mediapipe as mp
+import threading
 
 
 pygame.init()
@@ -34,6 +37,7 @@ MAZE_FILE = os.path.join(BASE_DIR, "mazes.txt")
 done_sound = pygame.mixer.Sound( ASSETS_DIR + "done.wav")
 error_sound = pygame.mixer.Sound( ASSETS_DIR + "error.wav")
 
+hand_x, hand_y = 0, 0
 
 def load_mazes_from_file(filename):
     mazes = []
@@ -96,6 +100,14 @@ def next_maze(mazes, index):
         return index, mazes[index], find_start(mazes[index])
     return None, None, (0, 0)
 
+def show_game_over():
+    font = pygame.font.SysFont(None, 72)
+    text = font.render("You Won!", True, COLORS["goal"])
+    rect = text.get_rect(center=(WIDTH//2, HEIGHT//2))
+    screen.blit(text, rect)
+    pygame.display.update()
+    pygame.time.wait(3000)
+
 def main():
     mazes = load_mazes_from_file(MAZE_FILE)
     maze_index = 0
@@ -136,6 +148,7 @@ def main():
                 start_x, start_y = player_x, player_y
                 pygame.time.delay(500)
             else:
+                show_game_over()
                 print("Bye")
                 running = False
 
