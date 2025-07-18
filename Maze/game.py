@@ -160,8 +160,9 @@ def main():
 
     clock = pygame.time.Clock()
 
-    cap = cv2.VideoCapture(0)
-    camera_on = True
+    cap = None
+
+    camera_on = False
     camera_pos = (10, HEIGHT - 130)
     exit_pos = (70, HEIGHT - 130)
 
@@ -189,7 +190,13 @@ def main():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mx, my = pygame.mouse.get_pos()
                 if cam_rect.collidepoint(mx, my):
-                    camera_on = not camera_on
+                    if cap is not None:
+                        cap.release()
+                        cap = None
+                        camera_on = False
+                    else:
+                        cap = cv2.VideoCapture(0)
+                        camera_on = True
                 elif exit_rect.collidepoint(mx, my):
                     running = False
 
@@ -217,10 +224,11 @@ def main():
                 show_game_over()
                 print("Bye")
                 running = False
-        frame = get_hand_frame(cap, hands)
-        if frame is not None:
-            hand_surface = cvframe_to_pygame(frame)
-            screen.blit(hand_surface, (WIDTH - 160, HEIGHT - 120))
+        if camera_on:        
+            frame = get_hand_frame(cap, hands)
+            if frame is not None:
+                hand_surface = cvframe_to_pygame(frame)
+                screen.blit(hand_surface, (WIDTH - 160, HEIGHT - 120))
 
         pygame.display.update()
         clock.tick(10)
